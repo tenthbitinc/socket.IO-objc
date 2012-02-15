@@ -61,6 +61,7 @@
 @implementation SocketIO
 
 @synthesize isConnected = _isConnected, isConnecting = _isConnecting;
+@synthesize currentEndpoint=_currentEndpoint;
 
 - (id) initWithDelegate:(id<SocketIODelegate>)delegate
 {
@@ -89,13 +90,20 @@
 
 - (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params withNamespace:(NSString *)endpoint
 {
+    [self connectToHost:host onPort:port withParams:params withNamespaces:[NSArray arrayWithObject:endpoint]];
+}
+
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params withNamespaces:(NSArray *)endpoints;
+{
     if (!_isConnected && !_isConnecting) 
     {
         _isConnecting = YES;
         
         _host = host;
         _port = port;
-        _endpoint = [endpoint copy];
+        _endpoints = [endpoints copy];
+        _connectedEndpoints = [NSMutableArray arrayWithCapacity:_endpoints.count];
+        _currentEndpoint = @"";
         
         // create a query parameters string
         NSMutableString *query = [[NSMutableString alloc] initWithString:@""];
@@ -205,6 +213,13 @@
     [self send:packet];
 }
 
+- (void) sendConnectToEndpoint:(NSString*)endpoint
+{
+    _currentEndpoint = endpoint;
+    SocketIOPacket *packet = [[SocketIOPacket alloc] initWithType:@"connect"];
+    [self send:packet];
+}
+
 - (void) sendHeartbeat
 {
     SocketIOPacket *packet = [[SocketIOPacket alloc] initWithType:@"heartbeat"];
@@ -231,7 +246,7 @@
     // Add the end point for the namespace to be used, as long as it is not
     // an ACK, heartbeat, or disconnect packet
     if ([type intValue] != 6 && [type intValue] != 2 && [type intValue] != 0) {
-        [encoded addObject:_endpoint];
+        [encoded addObject:_currentEndpoint];
     } else {
         [encoded addObject:@""];
     }
@@ -424,11 +439,26 @@
     
     // Send the connected packet so the server knows what it's dealing with.
     // Only required when endpoint/namespace is present
-    if ([_endpoint length] > 0) {
+    if ([_endpoints count] > 0) {
         // Make sure the packet we received has an endpoint, otherwise send it again
-        if (![packet.endpoint isEqualToString:_endpoint]) {
-            [self log:@"onConnect() >> End points do not match, resending connect packet"];
-            [self sendConnect];
+        if([packet.endpoint length]) {
+            if([_connectedEndpoints containsObject:packet.endpoint]) {
+                NSLog(@"already connected to: %@",packet.endpoint);
+            }else{
+                [_connectedEndpoints addObject:packet.endpoint];
+            }
+        }
+        
+        if ([_connectedEndpoints count] < [_endpoints count]) {
+            NSString *nextEndpoint = nil;
+            for(NSString *endpoint in _endpoints) {
+                if([_connectedEndpoints containsObject:endpoint]==NO) {
+                    nextEndpoint = endpoint;
+                    break;
+                }
+            }
+            [self log:[NSString stringWithFormat:@"onConnect() >> will connect to next endpoint: %@",nextEndpoint]];
+            [self sendConnectToEndpoint:nextEndpoint];
             return;
         }
     }

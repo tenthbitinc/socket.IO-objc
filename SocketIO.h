@@ -44,7 +44,9 @@ typedef void(^SocketIOCallback)(id argsData);
     NSString *_host;
     NSInteger _port;
     NSString *_sid;
-    NSString *_endpoint;
+    NSArray *_endpoints;
+    NSMutableArray *_connectedEndpoints;
+    NSString *_currentEndpoint;
     
     id<SocketIODelegate> _delegate;
     
@@ -65,11 +67,13 @@ typedef void(^SocketIOCallback)(id argsData);
 }
 
 @property (nonatomic, readonly) BOOL isConnected, isConnecting;
+@property (strong) NSString *currentEndpoint;
 
 - (id) initWithDelegate:(id<SocketIODelegate>)delegate;
 - (void) connectToHost:(NSString *)host onPort:(NSInteger)port;
 - (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params;
 - (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params withNamespace:(NSString *)endpoint;
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params withNamespaces:(NSArray *)endpoints;
 - (void) disconnect;
 
 - (void) sendMessage:(NSString *)data;
