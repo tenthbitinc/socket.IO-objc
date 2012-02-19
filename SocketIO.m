@@ -21,7 +21,7 @@
 #import "SocketIO.h"
 
 #import "ASIHTTPRequest.h"
-#import "SRWebSocket.h"
+#import "SocketRocket/SRWebSocket.h"
 #import "RegexKitLite.h"
 #import "SBJSON.h"
 #import "NSObject+SBJSON.h"
