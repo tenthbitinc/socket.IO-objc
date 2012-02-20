@@ -48,7 +48,7 @@ typedef void(^SocketIOCallback)(id argsData);
     NSMutableArray *_connectedEndpoints;
     NSString *_currentEndpoint;
     
-    id<SocketIODelegate> _delegate;
+    __unsafe_unretained id<SocketIODelegate> _delegate;
     
     SRWebSocket *_webSocket;
     
@@ -68,6 +68,7 @@ typedef void(^SocketIOCallback)(id argsData);
 
 @property (nonatomic, readonly) BOOL isConnected, isConnecting;
 @property (strong) NSString *currentEndpoint;
+@property (assign) id<SocketIODelegate> delegate;
 
 - (id) initWithDelegate:(id<SocketIODelegate>)delegate;
 - (void) connectToHost:(NSString *)host onPort:(NSInteger)port;
