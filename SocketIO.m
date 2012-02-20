@@ -52,6 +52,8 @@
 - (NSString *) addAcknowledge:(SocketIOCallback)function;
 - (void) removeAcknowledgeForKey:(NSString *)key;
 
+- (void) webSocketDispose_;
+
 @end
 
 
@@ -192,8 +194,7 @@
     NSURL * url = [NSURL URLWithString:urlString];
     NSURLRequest * urlRequest = [NSURLRequest requestWithURL:url];
     
-    [_webSocket close];
-    _webSocket = nil;
+    [self webSocketDispose_];
     
     _webSocket = [[SRWebSocket alloc] initWithURLRequest:urlRequest];
     _webSocket.delegate = self;
@@ -495,7 +496,7 @@
     
     // Disconnect the websocket, just in case
     if (_webSocket != nil && _webSocket.readyState != SR_CLOSED ) {
-        [_webSocket close];
+        [self webSocketDispose_];
     }
     
     if (wasConnected && [_delegate respondsToSelector:@selector(socketIODidDisconnect:)]) 
@@ -621,10 +622,24 @@
 #endif
 }
 
+- (void) webSocketDispose_
+{
+    if(_webSocket == nil) return;
+    [_webSocket close];
+    _webSocket.delegate = nil;
+    [[[SocketIO alloc] init] performSelector:@selector(webSocketDispose2_:) withObject:_webSocket afterDelay:10];
+    _webSocket = nil;
+}
+
+- (void) webSocketDispose2_:(NSObject*)socket
+{
+    NSLog(@"disposing of socket: %@",socket);
+}
 
 - (void) dealloc
 {
     [_timeout invalidate];
+    [self webSocketDispose_];
 }
 
 
