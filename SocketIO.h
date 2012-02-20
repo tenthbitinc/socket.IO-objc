@@ -43,6 +43,7 @@ typedef void(^SocketIOCallback)(id argsData);
 @private
     NSString *_host;
     NSInteger _port;
+    BOOL _secure;
     NSString *_sid;
     NSArray *_endpoints;
     NSMutableArray *_connectedEndpoints;
@@ -71,10 +72,10 @@ typedef void(^SocketIOCallback)(id argsData);
 @property (assign) id<SocketIODelegate> delegate;
 
 - (id) initWithDelegate:(id<SocketIODelegate>)delegate;
-- (void) connectToHost:(NSString *)host onPort:(NSInteger)port;
-- (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params;
-- (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params withNamespace:(NSString *)endpoint;
-- (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params withNamespaces:(NSArray *)endpoints;
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port secure:(BOOL)secure;
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port secure:(BOOL)secure withParams:(NSDictionary *)params;
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port secure:(BOOL)secure withParams:(NSDictionary *)params withNamespace:(NSString *)endpoint;
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port secure:(BOOL)secure withParams:(NSDictionary *)params withNamespaces:(NSArray *)endpoints;
 - (void) disconnect;
 
 - (void) sendMessage:(NSString *)data;

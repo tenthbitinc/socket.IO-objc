@@ -29,7 +29,9 @@
 
 #define DEBUG_LOGS 0
 #define HANDSHAKE_URL @"http://%@:%d/socket.io/1/?t=%d%@"
+#define HANDSHAKE_URL_SECURE @"https://%@:%d/socket.io/1/?t=%d%@"
 #define SOCKET_URL @"ws://%@:%d/socket.io/1/websocket/%@"
+#define SOCKET_URL_SECURE @"wss://%@:%d/socket.io/1/websocket/%@"
 
 
 # pragma mark -
@@ -81,22 +83,22 @@
     return self;
 }
 
-- (void) connectToHost:(NSString *)host onPort:(NSInteger)port
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port secure:(BOOL)secure
 {
-    [self connectToHost:host onPort:port withParams:nil withNamespace:@""];
+    [self connectToHost:host onPort:port secure:secure withParams:nil withNamespace:@""];
 }
 
-- (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port secure:(BOOL)secure withParams:(NSDictionary *)params
 {
-    [self connectToHost:host onPort:port withParams:params withNamespace:@""];
+    [self connectToHost:host onPort:port secure:secure withParams:params withNamespace:@""];
 }
 
-- (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params withNamespace:(NSString *)endpoint
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port secure:(BOOL)secure withParams:(NSDictionary *)params withNamespace:(NSString *)endpoint
 {
-    [self connectToHost:host onPort:port withParams:params withNamespaces:[NSArray arrayWithObject:endpoint]];
+    [self connectToHost:host onPort:port secure:secure withParams:params withNamespaces:[NSArray arrayWithObject:endpoint]];
 }
 
-- (void) connectToHost:(NSString *)host onPort:(NSInteger)port withParams:(NSDictionary *)params withNamespaces:(NSArray *)endpoints;
+- (void) connectToHost:(NSString *)host onPort:(NSInteger)port secure:(BOOL)secure withParams:(NSDictionary *)params withNamespaces:(NSArray *)endpoints;
 {
     if (!_isConnected && !_isConnecting) 
     {
@@ -104,6 +106,7 @@
         
         _host = host;
         _port = port;
+        _secure = secure;
         _endpoints = [endpoints copy];
         _connectedEndpoints = [NSMutableArray arrayWithCapacity:_endpoints.count];
         _currentEndpoint = @"";
@@ -115,7 +118,12 @@
         }];
         
         // do handshake via HTTP request
-        NSString *s = [NSString stringWithFormat:HANDSHAKE_URL, _host, _port, rand(), query];
+        NSString *s = nil;
+        if(_secure) {
+            s = [NSString stringWithFormat:HANDSHAKE_URL_SECURE, _host, _port, rand(), query];
+        }else{
+            s = [NSString stringWithFormat:HANDSHAKE_URL, _host, _port, rand(), query];
+        }
         [self log:[NSString stringWithFormat:@"Connecting to socket with URL: %@",s]];
         NSURL *url = [NSURL URLWithString:s];
         
@@ -191,7 +199,12 @@
 
 - (void) openSocket
 {
-    NSString * urlString = [NSString stringWithFormat:SOCKET_URL, _host, _port, _sid];
+    NSString * urlString = nil;
+    if(_secure) {
+        urlString = [NSString stringWithFormat:SOCKET_URL_SECURE, _host, _port, _sid];
+    }else{
+        urlString = [NSString stringWithFormat:SOCKET_URL, _host, _port, _sid];
+    }
     NSURL * url = [NSURL URLWithString:urlString];
     NSURLRequest * urlRequest = [NSURLRequest requestWithURL:url];
     
