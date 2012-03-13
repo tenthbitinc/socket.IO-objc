@@ -574,20 +574,33 @@
     [self log:[NSString stringWithFormat:@"requestFinished() %@", responseString]];
     NSArray *data = [responseString componentsSeparatedByString:@":"];
     
-    _sid = [data objectAtIndex:0];
-    [self log:[NSString stringWithFormat:@"sid: %@", _sid]];
+    if ([data count]>=4)
+    {
+        _sid = [data objectAtIndex:0];
+        [self log:[NSString stringWithFormat:@"sid: %@", _sid]];
+        
+        // add small buffer of 7sec (magic xD)
+        _heartbeatTimeout = [[data objectAtIndex:1] floatValue] + 7.0;
+        [self log:[NSString stringWithFormat:@"heartbeatTimeout: %f", _heartbeatTimeout]];
+        
+        // index 2 => connection timeout
+        
+        NSString *t = [data objectAtIndex:3];
+        NSArray *transports = [t componentsSeparatedByString:@","];
+        [self log:[NSString stringWithFormat:@"transports: %@", transports]];
     
-    // add small buffer of 7sec (magic xD)
-    _heartbeatTimeout = [[data objectAtIndex:1] floatValue] + 7.0;
-    [self log:[NSString stringWithFormat:@"heartbeatTimeout: %f", _heartbeatTimeout]];
-    
-    // index 2 => connection timeout
-    
-    NSString *t = [data objectAtIndex:3];
-    NSArray *transports = [t componentsSeparatedByString:@","];
-    [self log:[NSString stringWithFormat:@"transports: %@", transports]];
-    
-    [self openSocket];
+        [self openSocket];
+    }else{
+        NSLog(@"ERROR: handshake failed with status code %d. Response string: %@", request.responseStatusCode, request.responseString);
+        
+        _isConnected = NO;
+        _isConnecting = NO;
+        
+        if ([_delegate respondsToSelector:@selector(socketIOHandshakeFailed:)])
+        {
+            [_delegate socketIOHandshakeFailed:self];
+        }
+    }
 }
 
 - (void) requestFailed:(ASIHTTPRequest *)request
