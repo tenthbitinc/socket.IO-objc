@@ -37,7 +37,7 @@ typedef void(^SocketIOCallback)(id argsData);
 - (void) socketIOHandshakeFailed:(SocketIO *)socket;
 @end
 
-
+@class ASIHTTPRequest;
 @interface SocketIO : NSObject 
 {
 @private
@@ -51,6 +51,7 @@ typedef void(^SocketIOCallback)(id argsData);
     
     __unsafe_unretained id<SocketIODelegate> _delegate;
     
+    ASIHTTPRequest *_handshakeRequest;
     SRWebSocket *_webSocket;
     
     BOOL _isConnected;

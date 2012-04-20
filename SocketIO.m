@@ -127,9 +127,10 @@
         [self log:[NSString stringWithFormat:@"Connecting to socket with URL: %@",s]];
         NSURL *url = [NSURL URLWithString:s];
         
-        ASIHTTPRequest *request = [ASIHTTPRequest requestWithURL:url];
-        [request setDelegate:self];
-        [request startAsynchronous];
+        _handshakeRequest.delegate = nil;
+        _handshakeRequest = [ASIHTTPRequest requestWithURL:url];
+        [_handshakeRequest setDelegate:self];
+        [_handshakeRequest startAsynchronous];
     }
 }
 
@@ -666,6 +667,7 @@
 - (void) dealloc
 {
     [_timeout invalidate];
+    _handshakeRequest.delegate = nil;
     [self webSocketDispose_];
 }
 
