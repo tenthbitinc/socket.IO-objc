@@ -655,7 +655,7 @@
     if(_webSocket == nil) return;
     [_webSocket close];
     _webSocket.delegate = nil;
-    [[[SocketIO alloc] init] performSelector:@selector(webSocketDispose2_:) withObject:_webSocket afterDelay:10];
+    [[[SocketIO alloc] init] performSelector:@selector(webSocketDispose2_:) withObject:_webSocket afterDelay:30];
     _webSocket = nil;
 }
 
