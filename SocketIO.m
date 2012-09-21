@@ -514,7 +514,7 @@
         [self webSocketDispose_];
     }
     
-    if (wasConnected && [_delegate respondsToSelector:@selector(socketIODidDisconnect:)]) 
+    if ([_delegate respondsToSelector:@selector(socketIODidDisconnect:)]) 
     {
         [_delegate socketIODidDisconnect:self];
     }
