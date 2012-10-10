@@ -495,7 +495,6 @@
 - (void) onDisconnect 
 {
     [self log:@"onDisconnect()"];
-    BOOL wasConnected = _isConnected;
     
     _isConnected = NO;
     _isConnecting = NO;
