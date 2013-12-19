@@ -9,8 +9,6 @@
 //  using
 //  https://github.com/square/SocketRocket
 //  http://regexkit.sourceforge.net/RegexKitLite/
-//  https://github.com/stig/json-framework/
-//  http://allseeing-i.com/ASIHTTPRequest/
 //
 //  reusing some parts of
 //  /socket.io/socket.io.js
@@ -19,6 +17,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "AFNetworking.h"
 
 @class SRWebSocket;
 @class SocketIO;
@@ -37,7 +36,6 @@ typedef void(^SocketIOCallback)(id argsData);
 - (void) socketIOHandshakeFailed:(SocketIO *)socket;
 @end
 
-@class ASIHTTPRequest;
 @interface SocketIO : NSObject 
 {
 @private
@@ -51,7 +49,7 @@ typedef void(^SocketIOCallback)(id argsData);
     
     __unsafe_unretained id<SocketIODelegate> _delegate;
     
-    ASIHTTPRequest *_handshakeRequest;
+    AFHTTPRequestOperation *_handshakeRequest;
     SRWebSocket *_webSocket;
     
     BOOL _isConnected;

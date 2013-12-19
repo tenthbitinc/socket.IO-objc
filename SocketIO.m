@@ -9,8 +9,6 @@
 //  using
 //  https://github.com/square/SocketRocket
 //  http://regexkit.sourceforge.net/RegexKitLite/
-//  https://github.com/stig/json-framework/
-//  http://allseeing-i.com/ASIHTTPRequest/
 //
 //  reusing some parts of
 //  /socket.io/socket.io.js
@@ -20,7 +18,6 @@
 
 #import "SocketIO.h"
 
-#import "ASIHTTPRequest.h"
 #import "SocketRocket/SRWebSocket.h"
 #import "RegexKitLite.h"
 
@@ -124,10 +121,23 @@
         [self log:[NSString stringWithFormat:@"Connecting to socket with URL: %@",s]];
         NSURL *url = [NSURL URLWithString:s];
         
-        _handshakeRequest.delegate = nil;
-        _handshakeRequest = [ASIHTTPRequest requestWithURL:url];
-        [_handshakeRequest setDelegate:self];
-        [_handshakeRequest startAsynchronous];
+        [_handshakeRequest cancel];
+        
+        __weak SocketIO *weakSelf = self;
+        NSURLRequest *request = [NSURLRequest requestWithURL:url];
+        _handshakeRequest = [[AFHTTPRequestOperation alloc] initWithRequest:request];
+        [_handshakeRequest setCompletionBlockWithSuccess:^(AFHTTPRequestOperation *operation, id responseObject) {
+            SocketIO *strongSelf = weakSelf;
+            if (strongSelf) {
+                [strongSelf requestFinished:operation responseObject:responseObject];
+            }
+        } failure:^(AFHTTPRequestOperation *operation, NSError *error) {
+            SocketIO *strongSelf = weakSelf;
+            if (strongSelf) {
+                [strongSelf requestFailed:operation error:error];
+            }
+        }];
+        [_handshakeRequest start];
     }
 }
 
@@ -568,9 +578,9 @@
 # pragma mark -
 # pragma mark Handshake callbacks
 
-- (void) requestFinished:(ASIHTTPRequest *)request
+- (void) requestFinished:(AFHTTPRequestOperation *)operation responseObject:(id)responseObject
 {
-    NSString *responseString = [request responseString];
+    NSString *responseString = [[NSString alloc] initWithData:responseObject encoding:NSUTF8StringEncoding];
     [self log:[NSString stringWithFormat:@"requestFinished() %@", responseString]];
     NSArray *data = [responseString componentsSeparatedByString:@":"];
     
@@ -591,7 +601,7 @@
     
         [self openSocket];
     }else{
-        NSLog(@"ERROR: handshake failed with status code %d. Response string: %@", request.responseStatusCode, request.responseString);
+        NSLog(@"ERROR: handshake failed with status code %d. Response string: %@", operation.response.statusCode, operation.responseString);
         
         _isConnected = NO;
         _isConnecting = NO;
@@ -603,9 +613,8 @@
     }
 }
 
-- (void) requestFailed:(ASIHTTPRequest *)request
+- (void) requestFailed:(AFHTTPRequestOperation *)operation error:(NSError *)error
 {
-    NSError *error = [request error];
     NSLog(@"ERROR: handshake failed ... %@", [error localizedDescription]);
     
     _isConnected = NO;
@@ -666,7 +675,7 @@
 - (void) dealloc
 {
     [_timeout invalidate];
-    _handshakeRequest.delegate = nil;
+    [_handshakeRequest cancel];
     [self webSocketDispose_];
 }
 
