@@ -23,9 +23,6 @@
 #import "ASIHTTPRequest.h"
 #import "SocketRocket/SRWebSocket.h"
 #import "RegexKitLite.h"
-#import "SBJSON.h"
-#import "NSObject+SBJSON.h"
-#import "NSString+SBJSON.h"
 
 #define DEBUG_LOGS 0
 #define HANDSHAKE_URL @"http://%@:%d/socket.io/1/?t=%d%@"
@@ -160,7 +157,8 @@
 - (void) sendJSON:(NSDictionary *)data withAcknowledge:(SocketIOCallback)function
 {
     SocketIOPacket *packet = [[SocketIOPacket alloc] initWithType:@"json"];
-    packet.data = [data JSONRepresentation];
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:data options:0 error:nil];
+    packet.data = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     packet.pId = [self addAcknowledge:function];
     [self send:packet];
 }
@@ -177,7 +175,8 @@
         [dict setObject:data forKey:@"args"];
     
     SocketIOPacket *packet = [[SocketIOPacket alloc] initWithType:@"event"];
-    packet.data = [dict JSONRepresentation];
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dict options:0 error:nil];
+    packet.data = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     packet.pId = [self addAcknowledge:function];
     if (function) 
     {
@@ -188,7 +187,8 @@
 
 - (void)sendAcknowledgement:(NSString *)pId withArgs:(NSArray *)data {
     SocketIOPacket *packet = [[SocketIOPacket alloc] initWithType:@"ack"];
-    packet.data = [data JSONRepresentation];
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:data options:0 error:nil];
+    packet.data = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     packet.pId = pId;
     packet.ack = @"data";
     
@@ -394,7 +394,7 @@
                     id argsData = nil;
                     if (argsStr && ![argsStr isEqualToString:@""])
                     {
-                        argsData = [argsStr JSONValue];
+                        argsData = [NSJSONSerialization JSONObjectWithData:[argsStr dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
                         if ([argsData count] > 0)
                         {
                             argsData = [argsData objectAtIndex:0];
@@ -722,7 +722,7 @@
 
 - (id) dataAsJSON
 {
-    return [self.data JSONValue];
+    return [NSJSONSerialization JSONObjectWithData:[self.data dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
 }
 
 - (NSNumber *) typeAsNumber
