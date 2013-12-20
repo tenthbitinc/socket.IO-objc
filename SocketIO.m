@@ -8,7 +8,6 @@
 //
 //  using
 //  https://github.com/square/SocketRocket
-//  http://regexkit.sourceforge.net/RegexKitLite/
 //
 //  reusing some parts of
 //  /socket.io/socket.io.js
@@ -19,7 +18,6 @@
 #import "SocketIO.h"
 
 #import "SocketRocket/SRWebSocket.h"
-#import "RegexKitLite.h"
 
 #define DEBUG_LOGS 0
 #define HANDSHAKE_URL @"http://%@:%d/socket.io/1/?t=%d%@"
@@ -31,7 +29,9 @@
 # pragma mark -
 # pragma mark SocketIO's private interface
 
-@interface SocketIO (FP_Private) <SRWebSocketDelegate>
+@interface SocketIO () <SRWebSocketDelegate>
+@property (atomic, strong) NSRegularExpression *regexEvaluator;
+@property (atomic, strong) NSRegularExpression *regexPieceEvaluator;
 
 - (void) log:(NSString *)message;
 
@@ -42,7 +42,7 @@
 - (void) onDisconnect;
 
 - (void) sendDisconnect;
-- (void) sendHearbeat;
+- (void) sendHeartbeat;
 - (void) send:(SocketIOPacket *)packet;
 
 - (NSString *) addAcknowledge:(SocketIOCallback)function;
@@ -318,12 +318,26 @@
     // check if data is valid (from socket.io.js)
     NSString *regex = @"^([^:]+):([0-9]+)?(\\+)?:([^:]+)?:?(.*)?$";
     NSString *regexPieces = @"^([0-9]+)(\\+)?(.*)";
-    NSArray *test = [data arrayOfCaptureComponentsMatchedByRegex:regex];
+    
+    NSError *error = NULL;
+    if (!self.regexEvaluator) {
+        self.regexEvaluator = [NSRegularExpression regularExpressionWithPattern:regex options:NSRegularExpressionCaseInsensitive error:&error];
+    }
+    NSArray *matches = [self.regexEvaluator matchesInString:data options:0 range:NSMakeRange(0, data.length)];
     
     // valid data-string arrived
-    if ([test count] > 0) 
+    if ([matches count] > 0)
     {
-        NSArray *result = [test objectAtIndex:0];
+        NSTextCheckingResult *checkingResult = matches[0];
+        NSMutableArray *result = [NSMutableArray array];
+        for (NSUInteger i=0; i < checkingResult.numberOfRanges; i++) {
+            NSRange resultRange = [checkingResult rangeAtIndex:i];
+            if (resultRange.location != NSNotFound) {
+                [result addObject:[data substringWithRange:resultRange]];
+            } else {
+                [result addObject:@""];
+            }
+        }
         
         int idx = [[result objectAtIndex:1] intValue];
         SocketIOPacket *packet = [[SocketIOPacket alloc] initWithTypeIndex:idx];
@@ -392,11 +406,26 @@
             }
             case 6: {
                 [self log:@"ack"];
-                NSArray *pieces = [packet.data arrayOfCaptureComponentsMatchedByRegex:regexPieces];
                 
+                if (!self.regexPieceEvaluator) {
+                    self.regexPieceEvaluator = [NSRegularExpression regularExpressionWithPattern:regexPieces options:NSRegularExpressionCaseInsensitive error:&error];
+                }
+                NSArray *pieces = [self.regexPieceEvaluator matchesInString:packet.data options:0 range:NSMakeRange(0, packet.data.length)];
+                
+                // valid data-string arrived
                 if ([pieces count] > 0) 
                 {
-                    NSArray *piece = [pieces objectAtIndex:0];
+                    NSTextCheckingResult *piecesResult = pieces[0];
+                    NSMutableArray *piece = [NSMutableArray array];
+                    for (NSUInteger i=0; i < piecesResult.numberOfRanges; i++) {
+                        NSRange resultRange = [piecesResult rangeAtIndex:i];
+                        if (resultRange.location != NSNotFound) {
+                            [piece addObject:[packet.data substringWithRange:resultRange]];
+                        } else {
+                            [piece addObject:@""];
+                        }
+                    }
+
                     int ackId = [[piece objectAtIndex:1] intValue];
                     [self log:[NSString stringWithFormat:@"ack id found: %d", ackId]];
                     

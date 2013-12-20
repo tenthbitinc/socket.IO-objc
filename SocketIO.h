@@ -8,7 +8,6 @@
 //
 //  using
 //  https://github.com/square/SocketRocket
-//  http://regexkit.sourceforge.net/RegexKitLite/
 //
 //  reusing some parts of
 //  /socket.io/socket.io.js
