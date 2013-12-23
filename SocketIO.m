@@ -431,7 +431,7 @@
                     
                     NSString *argsStr = [piece objectAtIndex:3];
                     id argsData = nil;
-                    if (argsStr && ![argsStr isEqualToString:@""])
+                    if ([argsStr isKindOfClass:[NSString class]] && ![argsStr isEqualToString:@""])
                     {
                         argsData = [NSJSONSerialization JSONObjectWithData:[argsStr dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
                         if ([argsData count] > 0)
@@ -760,7 +760,12 @@
 
 - (id) dataAsJSON
 {
-    return [NSJSONSerialization JSONObjectWithData:[self.data dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
+    if ([self.data isKindOfClass:[NSString class]]) {
+        return [NSJSONSerialization JSONObjectWithData:[self.data dataUsingEncoding:NSUTF8StringEncoding] options:0 error:nil];
+    } else {
+        return nil;
+    }
+        
 }
 
 - (NSNumber *) typeAsNumber
