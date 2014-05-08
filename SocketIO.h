@@ -49,7 +49,6 @@ typedef void(^SocketIOCallback)(id argsData);
     __unsafe_unretained id<SocketIODelegate> _delegate;
     
     AFHTTPRequestOperation *_handshakeRequest;
-    SRWebSocket *_webSocket;
     
     BOOL _isConnected;
     BOOL _isConnecting;
@@ -63,6 +62,8 @@ typedef void(^SocketIOCallback)(id argsData);
     // acknowledge
     NSMutableDictionary *_acks;
     NSInteger _ackCount;
+@public
+    SRWebSocket *_webSocket;
 }
 
 @property (nonatomic, readonly) BOOL isConnected, isConnecting;
